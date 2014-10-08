@@ -1,0 +1,8 @@
+## Version 2.0
+1. Removed the 'reset' parameter; you should use 'disable' instead.
+2. Targets now receive the class {prefix}-target instead of equal-heights-processed.
+3. Configurable css prefix.
+4. Global defaults.
+5. Default responsive delay reduced to 10 ms.
+6. Responsive is no longer on by default.
+7. QUnit tests added.
