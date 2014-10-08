@@ -1,13 +1,13 @@
 /**
  * Equal Heights Plugin
- * Equalize the heights of all child elements to the tallest child
+ * http://www.intheloftstudios.com/packages/js/equal_heights
  *
- * @param object options
+ * Equalize the heights of all child elements to the tallest child.
  *   - filter: An optional selector string to filter which children are considered.
  *   - not: An optional selector string to filter which children are NOT considered.
  *   - target: Additional selector of targets where height will be applied; these nodes
      will not be used to calculate height, but will ONLY receive the calculated
-     height.
+ * Date: Wed Oct  8 15:23:28 PDT 2014
      - once: bool: Only allow each dom element to be processed 'once' by this
        function. When processed, elements receive the class
        'equal-heights-processed'. When once is set to false, this class is
@@ -105,4 +105,5 @@
     $parent.addClass(processedClass);
     return $(this);
   }
+  $.fn.equalHeights.version = function() { return '1.0.0'; };
 })(jQuery);
