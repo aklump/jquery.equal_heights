@@ -1,3 +1,35 @@
+QUnit.test("Assert using '.each()' produces group-specific, equalized heights.", function(assert) {
+  var $group = $('#group12');
+  $group.find('.subgroup').each(function () {
+    $(this).equalHeights();
+  });
+  assert.strictEqual($('#item31').height(), 100, 'Child height is uniform');
+  assert.strictEqual($('#item32').height(), 100, 'Child height is uniform');
+  assert.strictEqual($('#item33').height(), 60, 'Child height is uniform');
+  assert.strictEqual($('#item34').height(), 60, 'Child height is uniform');
+  assert.strictEqual($('#item35').height(), 30, 'Child height is uniform');
+  assert.strictEqual($('#item36').height(), 30, 'Child height is uniform');
+});
+
+QUnit.test("Assert that not using each produces uniform height.", function(assert) {
+  var $group = $('#group10');
+  var shimHeight = 100;
+  $group.find('.subgroup').equalHeights();
+  assert.strictEqual($('#item23').height(), shimHeight, 'Child height is uniform');
+  assert.strictEqual($('#item24').height(), shimHeight, 'Child height is uniform');
+  assert.strictEqual($('#item25').height(), shimHeight, 'Child height is uniform');
+  assert.strictEqual($('#item26').height(), shimHeight, 'Child height is uniform');
+  assert.strictEqual($('#item27').height(), shimHeight, 'Child height is uniform');
+  assert.strictEqual($('#item28').height(), shimHeight, 'Child height is uniform');
+});
+
+QUnit.test("Assert that our init preserves inline heights.", function(assert) {
+  $group = $('#group11');
+  var shimHeight = $('#item29').outerHeight();
+  $group.equalHeights({"disable": true});
+  assert.strictEqual($('#item29').height(), shimHeight, 'Inline height was preserved.');
+});
+
 QUnit.test("Assert beforeApply() callback functions correctly.", function(assert) {
   var $group = $('#group9');
   var shimHeight = $group.find('.shim').outerHeight();
@@ -62,7 +94,7 @@ QUnit.test("Assert disable removes heights from targets.", function(assert) {
   assert.strictEqual($('#item16').height(), shimHeight, 'child has correct height');
 
   $group.equalHeights({'disable': true});
-  assert.strictEqual($group.hasClass('eqh-processed'), false, 'Processed class has been removed from element');
+  // assert.strictEqual($group.hasClass('eqh-processed'), false, 'Processed class has been removed from element');
   assert.notStrictEqual($('#item16').height(), shimHeight, 'child has natural height');
 });
 

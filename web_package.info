@@ -1,5 +1,5 @@
 name = "Equal Heights"
 description = "Equalize the heights of all child elements to the tallest child."
-homepage = http://www.intheloftstudios.com/packages/js/equal_heights
+homepage = http://www.intheloftstudios.com/packages/js/jquery.equal_heights
 version = 2.0.1
 author = Aaron Klump <sourcecode@intheloftstudios.com>
