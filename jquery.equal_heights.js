@@ -1,5 +1,5 @@
 /**
- * Equal Heights jQuery JavaScript Plugin v2.0.3
+ * Equal Heights jQuery JavaScript Plugin v2.0.4
  * http://www.intheloftstudios.com/packages/js/jquery.equal_heights
  *
  * Equalize the heights of all child elements to the tallest child.
@@ -7,7 +7,7 @@
  * Copyright 2013, Aaron Klump
  * Dual licensed under the MIT or GPL Version 2 licenses.
  *
- * Date: Thu Oct  9 09:37:58 PDT 2014
+ * Date: Thu Oct  9 15:03:34 PDT 2014
  *
  * Equalize the heights of all child elements to the tallest child.
  *   - filter: An optional selector string to filter which children are considered.
@@ -286,6 +286,6 @@ $.fn.equalHeights.defaults = {
   "cssPrefix"         : 'eqh-'
 };
 
-$.fn.equalHeights.version = function() { return '2.0.3'; };
+$.fn.equalHeights.version = function() { return '2.0.4'; };
 
 })(jQuery, window, document);
