@@ -1,5 +1,5 @@
 /**
- * Equal Heights jQuery JavaScript Plugin v2.0.3
+ * Equal Heights jQuery JavaScript Plugin v2.0.4
  * http://www.intheloftstudios.com/packages/js/jquery.equal_heights
  *
  * Equalize the heights of all child elements to the tallest child.
@@ -7,7 +7,7 @@
  * Copyright 2013, Aaron Klump
  * Dual licensed under the MIT or GPL Version 2 licenses.
  *
- * Date: Thu Oct  9 09:37:58 PDT 2014
+ * Date: Thu Oct  9 15:03:34 PDT 2014
  *
  * Equalize the heights of all child elements to the tallest child.
  *   - filter: An optional selector string to filter which children are considered.
@@ -36,21 +36,15 @@ function EqualHeights(element, options) {
   if (!this.init()) {
     return this;
   }
-  
-  if (this.options.disable) {
-    this.reset();
-    return this;
-  }
 
-  if (this.options.reset) {
-    this.reset();
-  };
-
-  this.apply();
-  this.responsiveTimer = null;
+  // We really only care about this for the first pass.  If we're going to
+  // apply responsive then this has to be set to false.  So we capture its
+  // value and then set the options value to false.
+  var disable = this.options.disable;
 
   // Make it responsive
-  if (this.options.responsive) {
+  if (this.options.responsive) {   
+    this.options.disable = false;   
     var instance = this;
     $(window).bind('resize', function() {
       clearTimeout(instance.responsiveTimer);
@@ -59,12 +53,21 @@ function EqualHeights(element, options) {
       }, instance.options.delay);
     });
   }
+
+  // Now handle this pass.
+  if (disable) {
+    this.reset();
+    return this;
+  }
+  this.respond();
   
   return this;
 }
 
 EqualHeights.prototype.respond = function(width) {
-  this.reset();
+  if (this.options.reset) {
+    this.reset();
+  };
   this.apply();
 }
 
@@ -74,11 +77,23 @@ EqualHeights.prototype.respond = function(width) {
  * @return {bool} FALSE if there is nothing to do (only one element).
  */
 EqualHeights.prototype.init = function () {
+  
+  // This will count the number of targets.
+  this.length = 0;
+
+  // This will hold the max height.
+  this.height = null;
+
+  // Holds our reponsive timer object.
+  this.responsiveTimer = null;
+
+  if ($(this.element).length === 0) {
+    return false;
+  };
+
   var cssPrefix = this.options.cssPrefix;
   this.targets = null;
   
-  // Get our sample to measure for tallest.
-  this.total = 0;
 
   var $sample = null;
   $(this.element).each(function () {
@@ -92,14 +107,14 @@ EqualHeights.prototype.init = function () {
   this.sample = this.filterElements($sample);
   this.extras = null;
   
-  this.total += this.sample.length;
+  this.length += this.sample.length;
   if (this.options.target) {
     this.extras = $(this.element).find(this.options.target);
-    this.total += this.extras.length;
+    this.length += this.extras.length;
   }
   
   // Nothing to do if we don't have more than one element.
-  if (this.total < 2) {
+  if (this.length < 2) {
     return false;
   }
 
@@ -160,7 +175,7 @@ EqualHeights.prototype.apply = function () {
   var cssPrefix = this.options.cssPrefix;
 
   // Find the tallest.
-  var tallest = 0;
+  var tallest = this.options.minHeight;
   this.sample.each(function(){
     var height = $(this).outerHeight();
     tallest = Math.max(tallest, height);
@@ -170,6 +185,12 @@ EqualHeights.prototype.apply = function () {
   this.targets
   .addClass(cssPrefix + 'target')
   .height(tallest);
+
+  this.height = tallest;
+
+  if (typeof this.options.afterApply !== 'undefined') {
+    this.options.afterApply(this, $(window).width());
+  };  
 
   return this;
 };
@@ -182,30 +203,41 @@ EqualHeights.prototype.apply = function () {
  * @return {jQuery}
  */
 EqualHeights.prototype.filterElements = function($elements) {
-  if (this.options.filter) {
-    $elements = $elements.filter(this.options.filter);
+  if ($elements !== null) {
+    if (this.options.filter) {
+      $elements = $elements.filter(this.options.filter);
+    }
+    if (this.options.not) {
+      $elements = $elements.not(this.options.not);
+    }
+    // if (this.options.once) {
+    //   $elements = $elements.not(this.options.cssPrefix + 'processed');
+    //   $elements = $elements.not(this.options.cssPrefix + 'target');
+    // }
   }
-  if (this.options.not) {
-    $elements = $elements.not(this.options.not);
-  }
-  // if (this.options.once) {
-  //   $elements = $elements.not(this.options.cssPrefix + 'processed');
-  //   $elements = $elements.not(this.options.cssPrefix + 'target');
-  // }
 
   return $elements;
 };
 
 $.fn.equalHeights = function(options) {
   var instance = new EqualHeights(this, options);
-  $.fn.equalHeights.instances.push(instance);
-
-  return this;
+  var key = instance.options.key === null ? $.fn.equalHeights.instances.length : instance.options.key;
+  $.fn.equalHeights.instances[key] = instance;
+  
+  return instance;
 };
 
 $.fn.equalHeights.instances = [];
 
 $.fn.equalHeights.defaults = {
+
+  // Passing a unique key will register this instance using this key so it
+  // can be accessed: $.fn.equalHeights.instances.myKey, where key = 'myKey'
+  // from any other script.
+  'key'               : null,
+
+  // The minimum height to be calculated.
+  'minHeight'         : 0,
   
   // jQuery selector to apply as .filter() to the children of the element.
   'filter'            : null,
@@ -237,6 +269,13 @@ $.fn.equalHeights.defaults = {
     return true;
   },
 
+  // A function that is called after .apply().  You can use this to manipulate
+  // the options based on the results, say to set the minHeight based on the
+  // discovered height.
+  'afterApply'        : function(eh, width) {
+    return true;
+  },
+
   // Because a window may be changing size rapidly, you should set a delay
   // before we apply things, so that this doesn't fire for every pixel.  The
   // default is a reasonable choice.  The lower the number the smoother the
@@ -247,6 +286,6 @@ $.fn.equalHeights.defaults = {
   "cssPrefix"         : 'eqh-'
 };
 
-$.fn.equalHeights.version = function() { return '2.0.3'; };
+$.fn.equalHeights.version = function() { return '2.0.4'; };
 
 })(jQuery, window, document);
