@@ -1,1 +1,3 @@
 demo/jquery.equal_heights.min.js
+tests/qunit-1.15.0.min.js
+tests/tests.min.js
