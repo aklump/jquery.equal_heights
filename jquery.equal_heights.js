@@ -1,13 +1,13 @@
 /**
- * Equal Heights jQuery JavaScript Plugin v2.0.1
- * http://www.intheloftstudios.com/packages/js/equal_heights
+ * Equal Heights jQuery JavaScript Plugin v2.0.2
+ * http://www.intheloftstudios.com/packages/js/jquery.equal_heights
  *
  * Equalize the heights of all child elements to the tallest child.
  *
  * Copyright 2013, Aaron Klump
  * Dual licensed under the MIT or GPL Version 2 licenses.
  *
- * Date: Wed Oct  8 18:19:24 PDT 2014
+ * Date: Thu Oct  9 09:35:46 PDT 2014
  *
  * Equalize the heights of all child elements to the tallest child.
  *   - filter: An optional selector string to filter which children are considered.
@@ -69,19 +69,27 @@ EqualHeights.prototype.respond = function(width) {
 }
 
 /**
- * Initialize variables and determine how many items we have to affect.
+ * Figures out the sample, extras and target elements.
  *
- * @return {bool} FALSE if there is nothing to do.
+ * @return {bool} FALSE if there is nothing to do (only one element).
  */
 EqualHeights.prototype.init = function () {
+  var cssPrefix = this.options.cssPrefix;
   this.targets = null;
   
   // Get our sample to measure for tallest.
   this.total = 0;
 
-  // .not(this.options.cssPrefix + 'processed').children();
-  this.sample = $(this.element).children();
-  this.sample = this.filterElements(this.sample);
+  var $sample = null;
+  $(this.element).each(function () {
+    if ($sample === null) {
+      $sample = $(this).children();
+    }
+    else {
+      $.merge($sample, $(this).children());
+    }
+  });
+  this.sample = this.filterElements($sample);
   this.extras = null;
   
   this.total += this.sample.length;
@@ -97,6 +105,19 @@ EqualHeights.prototype.init = function () {
 
   this.targets = this.sample.add(this.extras);
 
+  // Store any inline height attributes as data.
+  if (!this.element.hasClass(cssPrefix + 'processed')) {
+    this.targets.each(function () {
+      var style = $(this).attr('style');
+      var height, data;
+      if (style && (height = style.match(/height[ :]+(\d+)/))) {
+        $(this).data(cssPrefix + 'original', height[1]);
+      };
+    });
+  }
+
+  $(this.element).addClass(cssPrefix + 'processed');
+  
   return true;
 };
 
@@ -107,8 +128,15 @@ EqualHeights.prototype.init = function () {
  */
 EqualHeights.prototype.reset = function () {
   var cssPrefix = this.options.cssPrefix;
-  this.element.removeClass(cssPrefix + 'processed');
   this.targets.height('').removeClass(cssPrefix + 'target');
+
+  // Apply any original style attributes
+  var data;
+  this.targets.each(function () {
+    if ((data = $(this).data(cssPrefix + 'original'))) {
+      $(this).height(data);
+    };
+  })
 
   return this;
 };
@@ -142,8 +170,6 @@ EqualHeights.prototype.apply = function () {
   this.targets
   .addClass(cssPrefix + 'target')
   .height(tallest);
-
-  $(this.element).addClass(this.options.cssPrefix + 'processed');
 
   return this;
 };
@@ -221,6 +247,6 @@ $.fn.equalHeights.defaults = {
   "cssPrefix"         : 'eqh-'
 };
 
-$.fn.equalHeights.version = function() { return '2.0.1'; };
+$.fn.equalHeights.version = function() { return '2.0.2'; };
 
 })(jQuery, window, document);
