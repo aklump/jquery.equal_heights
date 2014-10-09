@@ -1,5 +1,5 @@
 /**
- * Equal Heights jQuery JavaScript Plugin v2.0
+ * Equal Heights jQuery JavaScript Plugin v2.0.1
  * http://www.intheloftstudios.com/packages/js/equal_heights
  *
  * Equalize the heights of all child elements to the tallest child.
@@ -7,17 +7,13 @@
  * Copyright 2013, Aaron Klump
  * Dual licensed under the MIT or GPL Version 2 licenses.
  *
- * Date: Wed Oct  8 15:35:28 PDT 2014
+ * Date: Wed Oct  8 18:19:24 PDT 2014
  *
  * Equalize the heights of all child elements to the tallest child.
  *   - filter: An optional selector string to filter which children are considered.
  *   - not: An optional selector string to filter which children are NOT considered.
  *   - target: Additional selector of targets where height will be applied; these nodes
  *     will not be used to calculate height, but will ONLY receive the calculated height
- *   - once: bool: Only allow each dom element to be processed 'once' by this
- *     function. When processed, elements receive the class
- *     'equal-heights-processed'. When once is set to false, this class is
- *     ignored. When true, elements with this class will not be reprocessed.
  *   - disable: bool: Reset the height AND return without applying
  *     equal-heights. Use this to reverse the effects of this plugin on earlier
  *     elements.
@@ -40,32 +36,36 @@ function EqualHeights(element, options) {
   if (!this.init()) {
     return this;
   }
-
+  
   if (this.options.disable) {
     this.reset();
     return this;
+  }
+
+  if (this.options.reset) {
+    this.reset();
   };
 
   this.apply();
+  this.responsiveTimer = null;
 
   // Make it responsive
   if (this.options.responsive) {
-    
-    var timer;
     var instance = this;
-    
     $(window).bind('resize', function() {
-      if (timer) {
-        clearTimeout(timer)
-      };
-      timer = setTimeout(function(){
-        instance.reset();
-        instance.apply();
+      clearTimeout(instance.responsiveTimer);
+      instance.responsiveTimer = setTimeout(function(){
+        instance.respond($(window).width());
       }, instance.options.delay);
-    });    
-  };
+    });
+  }
   
   return this;
+}
+
+EqualHeights.prototype.respond = function(width) {
+  this.reset();
+  this.apply();
 }
 
 /**
@@ -79,25 +79,20 @@ EqualHeights.prototype.init = function () {
   // Get our sample to measure for tallest.
   this.total = 0;
 
-  var $children = $(this.element)
-  .children();
-  // .not(this.options.cssPrefix + '-processed').children();
-
-  this.sample = this.filterElements($children);
+  // .not(this.options.cssPrefix + 'processed').children();
+  this.sample = $(this.element).children();
+  this.sample = this.filterElements(this.sample);
   this.extras = null;
   
   this.total += this.sample.length;
   if (this.options.target) {
-    this.extras = $children.find(this.options.target);
-    this.extras = this.filterElements(this.extras);
+    this.extras = $(this.element).find(this.options.target);
     this.total += this.extras.length;
-  };
-
-  $(this.element).addClass(this.options.cssPrefix + '-processed');
+  }
   
   // Nothing to do if we don't have more than one element.
   if (this.total < 2) {
-    return false
+    return false;
   }
 
   this.targets = this.sample.add(this.extras);
@@ -112,11 +107,11 @@ EqualHeights.prototype.init = function () {
  */
 EqualHeights.prototype.reset = function () {
   var cssPrefix = this.options.cssPrefix;
-  this.element.removeClass(cssPrefix + '-processed');
-  this.targets.height('').removeClass(cssPrefix + '-target');
+  this.element.removeClass(cssPrefix + 'processed');
+  this.targets.height('').removeClass(cssPrefix + 'target');
 
   return this;
-}
+};
 
 /**
  * Applies the target class/equal height to this.targets.
@@ -124,6 +119,16 @@ EqualHeights.prototype.reset = function () {
  * @return {object} this
  */
 EqualHeights.prototype.apply = function () {
+  
+  // Apply the beforeApply callback and possible halt application.
+  var execute = true;
+  if (typeof this.options.beforeApply !== 'undefined') {
+    execute = this.options.beforeApply(this, $(window).width());
+  };
+  if (!execute) {
+    return;
+  };
+
   var cssPrefix = this.options.cssPrefix;
 
   // Find the tallest.
@@ -135,11 +140,13 @@ EqualHeights.prototype.apply = function () {
 
   // Now, apply the heights/class to the targets.
   this.targets
-  .addClass(cssPrefix + '-target')
-  .height(tallest); 
+  .addClass(cssPrefix + 'target')
+  .height(tallest);
 
-  return this; 
-}
+  $(this.element).addClass(this.options.cssPrefix + 'processed');
+
+  return this;
+};
 
 /**
  * Filters a set of jquery elements using this.options
@@ -155,19 +162,22 @@ EqualHeights.prototype.filterElements = function($elements) {
   if (this.options.not) {
     $elements = $elements.not(this.options.not);
   }
-  if (this.options.once) {
-    $elements = $elements.not(this.options.cssPrefix + '-processed');
-    $elements = $elements.not(this.options.cssPrefix + '-target');
-  }
+  // if (this.options.once) {
+  //   $elements = $elements.not(this.options.cssPrefix + 'processed');
+  //   $elements = $elements.not(this.options.cssPrefix + 'target');
+  // }
 
   return $elements;
-}
+};
 
 $.fn.equalHeights = function(options) {
-  new EqualHeights(this, options);
+  var instance = new EqualHeights(this, options);
+  $.fn.equalHeights.instances.push(instance);
 
   return this;
 };
+
+$.fn.equalHeights.instances = [];
 
 $.fn.equalHeights.defaults = {
   
@@ -180,24 +190,37 @@ $.fn.equalHeights.defaults = {
   // jQuery selector to select elements that will be targetted but not measured.
   'target'            : null,
 
-  // // Boolean to know if the previous height should be first removed.
-  // 'reset'             : false,
-
-  // Used to reverse the effects of a previous equalHeights call.
+  // Used to reverse the effects of a previous equalHeights call.  This can
+  // also be a function in which case it will receive the following parameters:
+  // (windowWidth).
   'disable'           : false,
+
+  // Buried this option because it should always been true, but leaving it
+  // here for that fringe case that sneaks up,
+  'reset'             : true,
 
   // For responsiveness you may use
   'responsive'        : false,
 
+  // A callback to fire just before applying heights.  Takes the object and the
+  // window width as arguments.  Return false to stop normal application.  This
+  // is useful to control the responsive application based on window width.
+  // You may also use this to hijack the height application and write your own
+  // version of the apply method.
+  'beforeApply'       : function(eh, width) {
+    return true;
+  },
+
   // Because a window may be changing size rapidly, you should set a delay
   // before we apply things, so that this doesn't fire for every pixel.  The
-  // default is a reasonable choice.
-  'delay'             : 10,
+  // default is a reasonable choice.  The lower the number the smoother the
+  // operation, but the more processor intensive.
+  'delay'             : 25,
   
   // A prefix for all css classes
-  "cssPrefix"         : 'equal-heights'  
+  "cssPrefix"         : 'eqh-'
 };
 
-$.fn.equalHeights.version = function() { return '2.0'; };
+$.fn.equalHeights.version = function() { return '2.0.1'; };
 
 })(jQuery, window, document);
