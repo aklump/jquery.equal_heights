@@ -7,7 +7,7 @@
  * Copyright 2013, Aaron Klump
  * Dual licensed under the MIT or GPL Version 2 licenses.
  *
- * Date: Thu Dec  4 21:21:41 PST 2014
+ * Date: Thu Dec  4 21:25:35 PST 2014
  *
  * Equalize the heights of all child elements to the tallest child.
  *   - filter: An optional selector string to filter which children are considered.
@@ -26,6 +26,8 @@
  *        $(object).equalHeights({filter: 'h2'});
  *
  * The second example above will process only h2 children
+ *
+ * @license
  */
 ;(function($, window, document, undefined) {
 "use strict";
